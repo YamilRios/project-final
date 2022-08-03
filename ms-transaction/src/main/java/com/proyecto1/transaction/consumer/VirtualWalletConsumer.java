@@ -133,6 +133,22 @@ public class VirtualWalletConsumer {
 		
 	}
 	
+	private Flux<Transaction> updateEmisorAmount (BuyBootCoin buyBootCoin) {
+		return transactionService.findAllWithDetail()
+				.filter(trans -> trans.getCustomerId().equalsIgnoreCase(buyBootCoin.getCustomerIdEmisor()))
+				.collectList()
+				.flatMapMany(trans -> {
+					trans.sort((o1, o2) -> o1.getCreditCardAssociationDate().compareTo(o2.getCreditCardAssociationDate()));
+					Transaction otrans = trans.stream().filter(t -> t.getProduct().getTypeProduct() == 1 || t.getProduct().getTypeProduct() == 2).findFirst().get();
+					
+					// seteamos valor en soles al emisor restandole el monto
+					otrans.setAvailableBalance(otrans.getAvailableBalance().subtract(buyBootCoin.getMontoSoles()));
+					log.info("Emisor monto listo para updatear {} -", buyBootCoin.getMontoSoles());
+					return transactionService.update(otrans, otrans.getId());
+				});
+		
+	}
+	
 	private Mono<Boolean> bankAccountValidation(BuyBootCoin buyBootCoin) {
 		return transactionService.findAllWithDetail().filter(trans -> trans.getCustomerId().equalsIgnoreCase(buyBootCoin.getAccountIdReceptor()))
 		.filter(trans -> trans.getProduct().getTypeProduct() == 1 || trans.getProduct().getTypeProduct() == 2)
