@@ -369,4 +369,9 @@ public class TransacionServiceImpl implements TransactionService {
                                             })));
                         }));
     }
+
+	@Override
+	public Flux<Transaction> findAllByCustomerId(String customerId) {
+		return transactionRepository.findAllByCustomerId(customerId);
+	}
 }

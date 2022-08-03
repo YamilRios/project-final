@@ -17,10 +17,11 @@ public class BuyBootCoin {
     private String walletId;
     private String customerIdEmisor;
     private String accountIdReceptor;
-    private BigDecimal monto;
+    private BigDecimal montoSoles;
     private String state;
     private String modoDePago;
+    
     private Integer buyBootCoinId;
-
+  
 
 }

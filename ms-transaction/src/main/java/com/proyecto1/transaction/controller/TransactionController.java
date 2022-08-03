@@ -42,6 +42,7 @@ public class TransactionController {
         log.info("Service call FindById - transaction");
         return transactionService.findById(id);
     }
+    
     @GetMapping("/findByIdWithCustomer/{id}")
     public Mono<Transaction> getTransactionWithCustomer(@PathVariable String id){
         log.info("Service call findWithCustomer - transaction");
@@ -63,5 +64,11 @@ public class TransactionController {
     public Mono<Transaction> deleteTransaction(@PathVariable String id){
         log.info("Service call Delete - transaction");
         return transactionService.delete(id);
+    }
+    
+    @GetMapping("/findAllByCustomerId/{id}")
+    public Flux<Transaction> getTransactionsByCustomerId(@PathVariable String id){
+        log.info("Service call findAllByCustomerId - transaction");
+        return transactionService.findAllByCustomerId(id);
     }
 }

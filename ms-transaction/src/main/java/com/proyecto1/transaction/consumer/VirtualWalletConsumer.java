@@ -10,8 +10,10 @@ import org.springframework.stereotype.Component;
 import com.google.gson.Gson;
 import com.proyecto1.transaction.client.BuyBcClient;
 import com.proyecto1.transaction.client.DebitCardClient;
+import com.proyecto1.transaction.client.VirtualWalletClient;
 import com.proyecto1.transaction.client.WalletBcClient;
 import com.proyecto1.transaction.entity.BuyBootCoin;
+import com.proyecto1.transaction.entity.Exchange;
 import com.proyecto1.transaction.entity.Transaction;
 import com.proyecto1.transaction.entity.VirtualWalletEvent;
 import com.proyecto1.transaction.service.TransactionService;
@@ -34,6 +36,9 @@ public class VirtualWalletConsumer {
 	WalletBcClient walletBcClient;
 	
 	@Autowired
+	VirtualWalletClient virtualWalletClient;
+	
+	@Autowired
 	TransactionService transactionService;
 	
 	@KafkaListener(topics = {"virtual-wallet-events"})
@@ -50,24 +55,53 @@ public class VirtualWalletConsumer {
 		
 	}
 	
-	/*
-	@KafkaListener(topics = {"buy-bootcoin-events"})
-	public void onMessageBuyBc(ConsumerRecord<Integer, String> consumerRecord) {
+	
+	@KafkaListener(topics = {"exchange-rate-events"})
+	public void onMessageExchangeRateWithBuyBootcoin(ConsumerRecord<Integer, String> consumerRecord) {
 		log.info("ConsumerRecord: {}", consumerRecord);
-		BuyBootCoin buyBootCoin = new Gson().fromJson(consumerRecord.value(), BuyBootCoin.class);
+		
+		Exchange exchange = new Gson().fromJson(consumerRecord.value(), Exchange.class);
+		BuyBootCoin buyBootCoin = exchange.getBuyBootCoin();
+		
 		
 		Mono<BuyBootCoin> buyBootCoinUpdate = walletBcClient.getWalletBcById(buyBootCoin.getWalletId()).flatMap(wbc -> {
 			wbc.getCelular();
 			buyBootCoin.getModoDePago();
 			
-			
+			if (buyBootCoin.getModoDePago().equalsIgnoreCase("CUENTA BANCARIA")) {
+				return bankAccountValidation(buyBootCoin).flatMap(hasBankAccount -> {
+					if (hasBankAccount) {
+						// realizar el pago
+						return updateReceptorAmount(buyBootCoin).collectList().flatMap(lstTrans -> {
+							return Mono.just(buyBootCoin);
+						});
+						
+					} 
+				    return Mono.just(buyBootCoin);
+					
+					
+				});
+			}
+			return Mono.just(buyBootCoin);
+			/*
+			if (buyBootCoin.getModoDePago().equalsIgnoreCase("YANKI")) {
+				yankiValidation(buyBootCoin).flatMap(hasYanki -> {
+					if (hasYanki) {
+						// realizar el pago
+					}
+					return Mono.just(null);
+				});
+			}
+			*/
+			//return Mono.just(null);
+			/*
 			return transactionService.findByIdWithCustomer(buyBootCoin.getAccountIdReceptor())
 					.filter(t -> t.getProduct().getTypeProduct() == 1 || t.getProduct().getTypeProduct() == 3)
 					.hasElement()
 					.flatMap(b -> {
 						if (b) {
 							// Actualizar los valores de las cuentas
-							updateReceptorBc(buyBootCoin.getAccountIdReceptor(), buyBootCoin.getMonto());
+							updateReceptorBc(buyBootCoin.getAccountIdReceptor(), buyBootCoin.getMontoSoles());
 							return Mono.just(null);
 						} else {
 							// Update el estado a rechazado
@@ -75,14 +109,43 @@ public class VirtualWalletConsumer {
 							return buyBcClient.updateBuyBootCoin(buyBootCoin);
 							
 						}
-					});
+					});*/
 		});
 		
 		
 		buyBootCoinUpdate.subscribe(t -> log.info("Entro a funcion updateReceptorBootcoin valor {}", t.toString()));
 		
 	}
-	*/
+	
+	private Flux<Transaction> updateReceptorAmount (BuyBootCoin buyBootCoin) {
+		return transactionService.findAllWithDetail()
+				.filter(trans -> trans.getCustomerId().equalsIgnoreCase(buyBootCoin.getAccountIdReceptor()))
+				.collectList()
+				.flatMapMany(trans -> {
+					trans.sort((o1, o2) -> o1.getCreditCardAssociationDate().compareTo(o2.getCreditCardAssociationDate()));
+					Transaction otrans = trans.stream().filter(t -> t.getProduct().getTypeProduct() == 1 || t.getProduct().getTypeProduct() == 2).findFirst().get();
+					
+					// seteamos valor en soles al vendedor
+					otrans.setAvailableBalance(otrans.getAvailableBalance().add(buyBootCoin.getMontoSoles()));
+					log.info("Receptor monto listo para updatear");
+					return transactionService.update(otrans, otrans.getId());
+				});
+		
+	}
+	
+	private Mono<Boolean> bankAccountValidation(BuyBootCoin buyBootCoin) {
+		return transactionService.findAllWithDetail().filter(trans -> trans.getCustomerId().equalsIgnoreCase(buyBootCoin.getAccountIdReceptor()))
+		.filter(trans -> trans.getProduct().getTypeProduct() == 1 || trans.getProduct().getTypeProduct() == 2)
+		.hasElements();
+	}
+	
+	private Mono<Boolean> yankiValidation (BuyBootCoin buyBootCoin) {
+		return walletBcClient.getWalletBcById(buyBootCoin.getWalletId()).flatMap(walletBc -> {
+			return virtualWalletClient.getVirtualWallets().filter(vw -> vw.getCellphone().equalsIgnoreCase(walletBc.getCelular()))
+					.hasElements();
+		});
+	}
+	
 	private void updateReceptorBc(String accountIdReceptor, BigDecimal monto) {
 		transactionService.findById(accountIdReceptor).flatMap(t -> {
 			t.setAvailableBalance(t.getAvailableBalance().subtract(monto));
