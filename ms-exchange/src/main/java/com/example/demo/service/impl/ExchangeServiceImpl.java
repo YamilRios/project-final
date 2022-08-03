@@ -65,6 +65,11 @@ public class ExchangeServiceImpl implements ExchangeService {
     @Override
     public Mono<Exchange> solesToBootcoin (Exchange e) {
     	// Obtener la taza ya registrada
+    	/*return exchangeRepository.findById("asdasda").flatMap(ex -> {
+    		e.setId(ex.getId());
+        	e.setMontoBootCoin(e.getMontoSoles().divide(ex.getTazaCambio(), 2, RoundingMode.HALF_UP));
+        	return Mono.just(e);
+    	});*/
     	e.setTazaCambio(BigDecimal.valueOf(3.92));
     	e.setMontoBootCoin(e.getMontoSoles().divide(e.getTazaCambio(), 2, RoundingMode.HALF_UP));
     	return Mono.just(e);

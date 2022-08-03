@@ -32,4 +32,6 @@ public class Exchange {
     private String buyBootCoinId;
     @Transient
     private BuyBootCoin buyBootCoin;
+    @Transient
+    private Integer buyBootCoinIntegerId;
 }

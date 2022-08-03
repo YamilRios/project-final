@@ -70,17 +70,18 @@ public class BuyBootCoinServiceImpl implements BuyBootCoinService {
 		
 		return buyBootCoinRepository.findById(id)
                 .map( x -> {
+                	x.setWalletId(x.getWalletId());
+                    x.setCustomerIdEmisor(x.getCustomerIdEmisor());
+                    x.setAccountIdReceptor(idReceptor);
+                    x.setMontoSoles(x.getMontoSoles());
+                    x.setState("Aceptado");
                 	
                 	try {
 						buyBcProducer.sendBuyBcBcEvent(x);
 					} catch (JsonProcessingException e) {
 						e.printStackTrace();
 					}
-                    x.setWalletId(x.getWalletId());
-                    x.setCustomerIdEmisor(x.getCustomerIdEmisor());
-                    x.setAccountIdReceptor(x.getAccountIdReceptor());
-                    x.setMontoSoles(x.getMontoSoles());
-                    x.setState("Aceptado");
+                    
                     return x;
                 }).flatMap(buyBootCoinRepository::save);
 	}
