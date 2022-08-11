@@ -1,5 +1,7 @@
 package com.proyecto1.product.client;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -9,11 +11,16 @@ import reactor.core.publisher.Flux;
 
 @Component
 public class PurchaseClient {
-    private WebClient client = WebClient.create("http://purchase-service:9007/purchase");
+	
+	@Value("${config.purchase.endpoint}")
+    String purchaseProduct;
+	
+	@Autowired
+	WebClient.Builder client;
 
     public Flux<Purchase> getPurchase(){
-        return client.get()
-                .uri("/findAll")
+        return client.build().get()
+                .uri(purchaseProduct+"/findAll")
                 .retrieve()
                 .bodyToFlux(Purchase.class);
     }

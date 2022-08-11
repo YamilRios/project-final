@@ -1,5 +1,7 @@
 package com.proyecto1.customer.client;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -10,12 +12,17 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class TransactionClient {
-    private WebClient client = WebClient.create("http://transaction-service:9004/transaction");
+	
+	@Value("${config.transaction.endpoint}")
+	String path;
+	
+	@Autowired
+	WebClient.Builder client;
 
     public Mono<Transaction> getTransactionWithDetails(String id){
-        return client.get()
+        return client.build().get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/findByIdWithCustomer/{id}")
+                        .path(path+"/findByIdWithCustomer/{id}")
                         .build(id)
                 )
                 .retrieve()
@@ -23,9 +30,9 @@ public class TransactionClient {
     };
     
     public Mono<Transaction> updateTransaction(Transaction transaction){
-        return client.put()
+        return client.build().put()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/update/{id}")
+                        .path(path+"/update/{id}")
                         .build(transaction.getId())
                 )
                 .bodyValue(transaction)
@@ -35,15 +42,15 @@ public class TransactionClient {
     
     
     public Flux<Transaction> findAll(){
-        return client.get()
-                .uri("/findAll")
+        return client.build().get()
+                .uri(path+"/findAll")
                 .retrieve()
                 .bodyToFlux(Transaction.class);
     };
     
     public Flux<Transaction> findAllWithDetail(){
-        return client.get()
-                .uri("/findAllWithDetail")
+        return client.build().get()
+                .uri(path+"/findAllWithDetail")
                 .retrieve()
                 .bodyToFlux(Transaction.class);
     };

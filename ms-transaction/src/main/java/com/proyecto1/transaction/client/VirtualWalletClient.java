@@ -1,5 +1,7 @@
 package com.proyecto1.transaction.client;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -10,26 +12,31 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class VirtualWalletClient {
-	private WebClient client = WebClient.create("http://virtual-wallet-service:8083/virtualWallet");
 
+	@Value("${config.virtualwalletservice.endpoint}")
+    String virtualWallet;
+	
+	@Autowired
+	WebClient.Builder client;
+	
     public Flux<VirtualWallet> getVirtualWallets(){
-        return client.get()
-                .uri("/findAll")
+        return client.build().get()
+                .uri(virtualWallet+"/findAll")
                 .retrieve()
                 .bodyToFlux(VirtualWallet.class);
     }
     
     public Mono<VirtualWallet> getVirtualWalletById(String id){
-    	return client.get()
-                .uri("/find/"+id)
+    	return client.build().get()
+                .uri(virtualWallet+"/find/"+id)
                 .retrieve()
                 .bodyToMono(VirtualWallet.class);
     }
     
     public Mono<VirtualWallet> updateVirtualWallet(VirtualWallet virtualWallet){
-        return client.put()
+        return client.build().put()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/update/{id}")
+                        .path(virtualWallet+"/update/{id}")
                         .build(virtualWallet.getId())
                 )
                 .bodyValue(virtualWallet)

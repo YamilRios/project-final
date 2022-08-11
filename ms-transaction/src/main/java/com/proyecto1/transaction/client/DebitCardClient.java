@@ -1,5 +1,7 @@
 package com.proyecto1.transaction.client;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -11,26 +13,31 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class DebitCardClient {
-	private WebClient client = WebClient.create("http://debitcard-service:8081/debitcard");
 
+	@Value("${config.debitcard.endpoint}")
+    String debitcardPath;
+	
+	@Autowired
+	WebClient.Builder client;
+	
     public Flux<DebitCard> getDebitCards(){
-        return client.get()
-                .uri("/findAll")
+        return client.build().get()
+                .uri(debitcardPath+"/findAll")
                 .retrieve()
                 .bodyToFlux(DebitCard.class);
     }
     
     public Mono<DebitCard> getDebitCardByTransactionId(String id){
-    	return client.get()
-                .uri("/findByTransactionId/"+id)
+    	return client.build().get()
+                .uri(debitcardPath+"/findByTransactionId/"+id)
                 .retrieve()
                 .bodyToMono(DebitCard.class);
     }
     
     public Flux<DebitCard> getPrincipalDebitAccount(String cardNumber){
-        return client.get()
+        return client.build().get()
         		.uri(uriBuilder -> uriBuilder
-                        .path("/principalDebitAccount/{id}")
+                        .path(debitcardPath+"/principalDebitAccount/{id}")
                         .build(cardNumber)
                 )
                 .retrieve()

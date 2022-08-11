@@ -3,3 +3,8 @@ spring:
     name: deposit-service
   config:
     import: optional:configserver:http://config-service:9001
+config:
+  debitcard:
+    endpoint: http://debitcard-service/debitcard
+  transaction:
+    endpoint: http://transaction-service/transaction

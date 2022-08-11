@@ -3,3 +3,6 @@ spring:
     name: debitcard-service
   config:
     import: optional:configserver:http://config-service:9001
+config:
+  transaction:
+    client: http://transaction-service/transaction    

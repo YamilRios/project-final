@@ -1,5 +1,7 @@
 package com.proyecto1.transaction.client;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -11,18 +13,23 @@ import reactor.core.publisher.Mono;
 @Component
 public class WalletBcClient {
 	
-	private WebClient client = WebClient.create("http://wallet-bootcoin-service:8084/walletBc");
 
+	@Value("${config.walletbc.endpoint}")
+    String walletBc;
+	
+	@Autowired
+	WebClient.Builder client;
+	
     public Flux<WalletBc> getWalletBcs(){
-        return client.get()
-                .uri("/findAll")
+        return client.build().get()
+                .uri(walletBc+"/findAll")
                 .retrieve()
                 .bodyToFlux(WalletBc.class);
     }
     
     public Mono<WalletBc> getWalletBcById(String id){
-    	return client.get()
-                .uri("/find/"+id)
+    	return client.build().get()
+                .uri(walletBc+"/find/"+id)
                 .retrieve()
                 .bodyToMono(WalletBc.class);
     }

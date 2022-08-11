@@ -29,7 +29,6 @@ import com.proyecto1.transaction.entity.Withdrawal;
 import com.proyecto1.transaction.repository.TransactionRepository;
 import com.proyecto1.transaction.service.TransactionService;
 
-import lombok.extern.java.Log;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -60,6 +59,47 @@ public class TransacionServiceImpl implements TransactionService {
 
     @Autowired
     SignatoryClient signatoryClient;
+    
+    @Override
+    public Mono<Transaction> findByIdWithCustomer(String id) {
+        log.info("Method call FindByIdWithCustomer - transaction");
+        return transactionRepository.findById(id)
+                .flatMap( trans -> customerClient.getCustomer(trans.getCustomerId())
+                        .flatMap( customer -> {
+                            return  product.getProduct(trans.getProductId())
+                                    .flatMap( product -> {
+                                        return depositClient.getDeposit()
+                                                .filter(x -> x.getTransactionId().equals(trans.getId()))
+                                                .collectList()
+                                                .flatMap((deposit -> {
+                                                    return withDrawalClient.getWithDrawal()
+                                                           .filter(i -> i.getTransactionId().equals(trans.getId()))
+                                                           .collectList()
+                                                           .flatMap(( withdrawals -> {
+                                                               return paymentClient.getPayment()
+                                                                       .filter(z -> z.getTransactionId().equals(trans.getId()))
+                                                                       .collectList()
+                                                                       .flatMap((payments -> {
+                                                               return purchaseClient.getPurchase()
+                                                                       .filter(y -> y.getTransactionId().equals(trans.getId()))
+                                                                       .collectList()
+                                                                       .flatMap(purchases -> {
+
+                                                                           return signatoryClient.getSignatory()
+                                                                                   .filter(o -> o.getTransactionId().equals(trans.getId()))
+                                                                                   .collectList()
+                                                                                   .flatMap(signatories -> {
+                                                                                       ValorAllValidator(trans, customer, product, deposit, withdrawals, payments, purchases, signatories);
+                                                                                       return Mono.just(trans);
+                                                                                   });
+                                                                       });
+
+                                                                       } ));
+                                                   } ));
+                                    }));
+                        });
+            }));
+    }
 
     @Override
     public Flux<Transaction> findAll() {
@@ -231,46 +271,7 @@ public class TransacionServiceImpl implements TransactionService {
         return transactionRepository.findById(id).flatMap( x -> transactionRepository.delete(x).then(Mono.just(Transaction.builder().id(id).build())));
     }
 
-    @Override
-    public Mono<Transaction> findByIdWithCustomer(String id) {
-        log.info("Method call FindByIdWithCustomer - transaction");
-        return transactionRepository.findById(id)
-                .flatMap( trans -> customerClient.getCustomer(trans.getCustomerId())
-                        .flatMap( customer -> {
-                            return product.getProduct(trans.getProductId())
-                                    .flatMap( product -> {
-                                        return depositClient.getDeposit()
-                                                .filter(x -> x.getTransactionId().equals(trans.getId()))
-                                                .collectList()
-                                                .flatMap((deposit -> {
-                                                    return withDrawalClient.getWithDrawal()
-                                                           .filter(i -> i.getTransactionId().equals(trans.getId()))
-                                                           .collectList()
-                                                           .flatMap(( withdrawals -> {
-                                                               return paymentClient.getPayment()
-                                                                       .filter(z -> z.getTransactionId().equals(trans.getId()))
-                                                                       .collectList()
-                                                                       .flatMap((payments -> {
-                                                               return purchaseClient.getPurchase()
-                                                                       .filter(y -> y.getTransactionId().equals(trans.getId()))
-                                                                       .collectList()
-                                                                       .flatMap(purchases -> {
-
-                                                                           return signatoryClient.getSignatory()
-                                                                                   .filter(o -> o.getTransactionId().equals(trans.getId()))
-                                                                                   .collectList()
-                                                                                   .flatMap(signatories -> {
-                                                                                       ValorAllValidator(trans, customer, product, deposit, withdrawals, payments, purchases, signatories);
-                                                                                       return Mono.just(trans);
-                                                                                   });
-                                                                       });
-
-                                                                       } ));
-                                                   } ));
-                                    }));
-                        });
-            }));
-    }
+    
 
 	@Override
 	public Flux<Transaction> findAllWithDetail() {

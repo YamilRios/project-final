@@ -1,18 +1,26 @@
 package com.proyecto1.signatory.client;
 
 import com.proyecto1.signatory.entity.Product;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 @Component
 public class ProductClient {
-    private WebClient client = WebClient.create("http://product-service:9003/product");
+    
+	@Value("${config.product.endpoint}")
+    String pathProduct;
+	
+	@Autowired
+	WebClient.Builder product;
 
     public Mono<Product> getProduct(String id){
-        return client.get()
+        return product.build().get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/find/{id}")
+                        .path(pathProduct+"/find/{id}")
                         .build(id)
                 )
                 .retrieve()

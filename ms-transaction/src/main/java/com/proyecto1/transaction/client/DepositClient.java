@@ -1,19 +1,26 @@
 package com.proyecto1.transaction.client;
 
-import com.proyecto1.transaction.entity.Customer;
-import com.proyecto1.transaction.entity.Deposit;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import com.proyecto1.transaction.entity.Deposit;
+
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 @Component
 public class DepositClient {
-    private WebClient client = WebClient.create("http://deposit-service:9005/deposit");
 
+	@Value("${config.deposit.endpoint}")
+    String depositPath;
+	
+	@Autowired
+	WebClient.Builder client;
+	
     public Flux<Deposit> getDeposit(){
-        return client.get()
-                .uri("/findAll")
+        return client.build().get()
+                .uri(depositPath+"/findAll")
                 .retrieve()
                 .bodyToFlux(Deposit.class);
     }

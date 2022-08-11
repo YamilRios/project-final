@@ -2,4 +2,27 @@ spring:
   application:
     name: transaction-service
   config:
-    import: optional:configserver:http://config-service:9001 
+    import: optional:configserver:http://config-service:9001
+config:
+  product:
+    endpoint: http://product-service/product
+  customer:
+    endpoint: http://customer-service/customer
+  payment:
+    endpoint: http://payment-service/payment
+  deposit:
+    endpoint: http://deposit-service/deposit
+  purchase:
+    endpoint: http://purchase-service/purchase
+  withdrawal:
+    endpoint: http://withdrawal-service/withdrawal
+  signatory:
+    endpoint: http://signatory-service/signatory
+  buybootcoin:
+    endpoint: http://buyBootCoin-service/buyBootCoin
+  debitcard:
+    endpoint: http://debitcard-service/debitcard
+  virtualwalletservice:
+    endpoint: http://virtual-wallet-service/virtualWallet
+  walletbc:
+    endpoint: http://wallet-bootcoin-service/walletBc

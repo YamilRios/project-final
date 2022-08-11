@@ -1,5 +1,7 @@
 package com.proyecto1.transaction.client;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -11,11 +13,16 @@ import reactor.core.publisher.Mono;
 @Component
 public class ProductClient {
 	
-	private WebClient product = WebClient.create("http://product-service:9003/product");
 
+	@Value("${config.product.endpoint}")
+    String pathProduct;
+	
+	@Autowired
+	WebClient.Builder product;
+	
     public Mono<Product> getProduct(String id){
-    	return product.get()
-                .uri("/find/"+id)
+    	return product.build().get()
+                .uri(pathProduct+"/find/"+id)
                 /*.uri(uriBuilder -> uriBuilder
                         .path("/find/{id}")
                         .build(id))*/
@@ -25,7 +32,7 @@ public class ProductClient {
     }
     
     public Flux<Product> getProducts(){
-    	return product.get()
+    	return product.build().get()
                 .uri("/findAll")
                 .retrieve()
                 .bodyToFlux(Product.class);

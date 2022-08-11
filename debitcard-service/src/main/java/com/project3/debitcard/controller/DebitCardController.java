@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project3.debitcard.entity.DebitCard;
-import com.project3.debitcard.entity.Transaction;
 import com.project3.debitcard.service.DebitCardService;
 
 import reactor.core.publisher.Flux;

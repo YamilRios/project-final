@@ -1,6 +1,8 @@
 package com.proyecto1.transaction.client;
 
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
 import org.springframework.stereotype.Component;
@@ -14,13 +16,18 @@ import reactor.core.publisher.Mono;
 @Component
 @RequiredArgsConstructor
 public class CustomerClient {
-
-    private WebClient client = WebClient.create("http://customer-service:9002/customer");
+	
     private final ReactiveCircuitBreakerFactory reactiveCircuitBreakerFactory;
 
+    @Value("${config.customer.endpoint}")
+    String customerPath;
+	
+	@Autowired
+	WebClient.Builder client;
+    
     public Mono<Customer> getCustomer(String id){
-        return client.get()
-                .uri("/find/"+id)
+        return client.build().get()
+                .uri(customerPath+"/find/"+id)
                 .retrieve()
                 .bodyToMono(Customer.class)
                 .transform( it -> {
