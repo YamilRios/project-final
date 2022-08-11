@@ -2,7 +2,7 @@ spring:
   application:
     name: signatory-service
   config:
-    import: optional:configserver:http://config-service:9001
+    import: optional:configserver:http://localhost:9001
 config:
   product:
     endpoint: http://product-service/product
